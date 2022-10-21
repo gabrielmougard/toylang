@@ -1,0 +1,9 @@
+{
+    "makefile.extensionOutputFolder": "./.vscode",
+    "files.associations": {
+        "string": "cpp",
+        "qfileopenevent": "cpp",
+        "qapplication": "cpp",
+        "qversionnumber": "cpp"
+    }
+}

@@ -1,0 +1,28 @@
+
+
+{
+    "configurations": [
+      {
+        "name": "Linux",
+        "intelliSenseMode": "clang-x64",
+        "includePath": [
+          "/usr/include/**",
+          "/usr/local/include",
+          "/usr/lib/x86_64-linux-gnu/glib-2.0/include",
+          "/usr/lib/x86_64-linux-gnu/gstreamer-1.0/include",
+          "/usr/local/include",
+          "/usr/include/x86_64-linux-gnu",
+          // toylang
+          "${workspaceRoot}/src/**"
+        ],
+        "compilerPath": "/usr/bin/clang",
+        "cStandard": "c11",
+        "cppStandard": "c++17",
+        "browse": {
+          "limitSymbolsToIncludedHeaders": true,
+          "databaseFilename": ""
+        }
+      }
+    ],
+    "version": 4
+}
