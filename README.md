@@ -138,6 +138,6 @@ apt-get install clang-format clang-tidy clang-tools clang clangd libc++-dev libc
     * function definition
     * external function definition
 
-* [TODO] Control flow logic
+* JIT compilation + optimizer support
+* Control flow logic + for-loop
 * [TODO] User-defined operator
-* [TODO] JIT compilation + optimizer support
