@@ -21,16 +21,73 @@ A toy language based on LLVM.
 ## Examples
 
 ```
-// function definition
-def foo(a b) a*a + 2*a*b + b*b;
+ready> extern sin(x);
+ready> Read extern: 
+declare double @sin(double)
 
-// external function
-extern cos(x);
+ready> extern cos(x);
+ready> Read extern: 
+declare double @cos(double)
 
-// binary operations
-4+5
+ready> sin(1.0);
+ready> Read top-level expression: 
+define double @__anon_expr() {
+entry:
+  %calltmp = call double @sin(double 1.000000e+00)
+  ret double %calltmp
+}
 
-4*5
+Evaluated to 0.841471
+ready> def foo(x) sin(x)*sin(x) + cos(x)*cos(x);
+ready> Read function definition: 
+define double @foo(double %x) {
+entry:
+  %calltmp = call double @sin(double %x)
+  %calltmp1 = call double @sin(double %x)
+  %multmp = fmul double %calltmp, %calltmp1
+  %calltmp2 = call double @cos(double %x)
+  %calltmp3 = call double @cos(double %x)
+  %multmp4 = fmul double %calltmp2, %calltmp3
+  %addtmp = fadd double %multmp, %multmp4
+  ret double %addtmp
+}
+
+ready> foo(4.0);
+ready> Read top-level expression: 
+define double @__anon_expr() {
+entry:
+  %calltmp = call double @foo(double 4.000000e+00)
+  ret double %calltmp
+}
+
+Evaluated to 1.000000
+ready> def testfunc(x y) x + y*2;
+ready> Read function definition: 
+define double @testfunc(double %x, double %y) {
+entry:
+  %multmp = fmul double %y, 2.000000e+00
+  %addtmp = fadd double %x, %multmp
+  ret double %addtmp
+}
+
+ready> testfunc(4, 10);
+ready> Read top-level expression: 
+define double @__anon_expr() {
+entry:
+  %calltmp = call double @testfunc(double 4.000000e+00, double 1.000000e+01)
+  ret double %calltmp
+}
+
+Evaluated to 24.000000
+ready> testfunc(5, 10);
+ready> Read top-level expression: 
+define double @__anon_expr() {
+entry:
+  %calltmp = call double @testfunc(double 5.000000e+00, double 1.000000e+01)
+  ret double %calltmp
+}
+
+Evaluated to 25.000000
 ```
 
 ## Dependencies
