@@ -88,6 +88,34 @@ entry:
 }
 
 Evaluated to 25.000000
+
+ready> extern foo();
+ready> Read extern: 
+declare double @foo()
+
+ready> extern bar();
+ready> Read extern: 
+declare double @bar()
+
+ready> def baz(x) if x then foo() else bar();
+ready> Read function definition: 
+define double @baz(double %x) {
+entry:
+  %ifcond = fcmp one double %x, 0.000000e+00
+  br i1 %ifcond, label %then, label %else
+
+then:                                             ; preds = %entry
+  %calltmp = call double @foo()
+  br label %ifcont
+
+else:                                             ; preds = %entry
+  %calltmp1 = call double @bar()
+  br label %ifcont
+
+ifcont:                                           ; preds = %else, %then
+  %iftmp = phi double [ %calltmp, %then ], [ %calltmp1, %else ]
+  ret double %iftmp
+}
 ```
 
 ## Dependencies

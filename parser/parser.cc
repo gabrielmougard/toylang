@@ -92,13 +92,15 @@ std::unique_ptr<ExprAST> ParseIdentifierExpr() {
 std::unique_ptr<ExprAST> ParsePrimary() {
   switch (CurTok) {
     default:
-    return LogError("Unknown token when expecting an expression");
+      return LogError("Unknown token when expecting an expression");
     case tok_identifier:
-    return ParseIdentifierExpr();
+      return ParseIdentifierExpr();
     case tok_number:
-    return ParseNumberExpr();
+      return ParseNumberExpr();
     case '(':
-    return ParseParenExpr();
+      return ParseParenExpr();
+    case tok_if:
+      return ParseIfExpr();
   }
 }
 
@@ -193,4 +195,33 @@ std::unique_ptr<FunctionAST> ParseTopLevelExpr() {
 std::unique_ptr<PrototypeAST> ParseExtern() {
   getNextToken();
   return ParsePrototype();
+}
+
+std::unique_ptr<ExprAST> ParseIfExpr() {
+  getNextToken();
+  
+  // condition
+  auto Cond = ParseExpression();
+  if (!Cond)
+    return nullptr;
+
+  if (CurTok != tok_then)
+    return LogError("expected then");
+  
+  getNextToken(); // eat the then
+
+  auto Then = ParseExpression();
+  if (!Then)
+    return nullptr;
+
+  if (CurTok != tok_else)
+    return LogError("expected else");
+
+  getNextToken();
+
+  auto Else = ParseExpression();
+  if (!Else)
+    return nullptr;
+
+  return std::make_unique<IfExprAST>(std::move(Cond), std::move(Then), std::move(Else));
 }

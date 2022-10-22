@@ -12,27 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef __TOKEN_H__
-#define __TOKEN_H__
+#include "ast/ExprAST.h"
 
-// The lexer returns tokens [0-255] if it's an unknown character
-// otherwise it returns one of these for known things
-enum Token {
-  // End Of File
-  tok_eof = -1,
+#ifndef __IF_EXPR_AST_H__
+#define __IF_EXPR_AST_H__
 
-  // Commands
-  tok_def = -2,
-  tok_extern = -3,
+class IfExprAST : public ExprAST {
+  std::unique_ptr<ExprAST> Cond, Then, Else;
 
-  // Primary
-  tok_identifier = -4,
-  tok_number = -5,
+public:
+  IfExprAST(std::unique_ptr<ExprAST> Cond, std::unique_ptr<ExprAST> Then,
+            std::unique_ptr<ExprAST> Else)
+    : Cond(std::move(Cond)), Then(std::move(Then)), Else(std::move(Else)) {}
 
-  // control flow
-  tok_if = -6,
-  tok_then = -7,
-  tok_else = -8,
+  llvm::Value *codegen() override;
 };
 
-#endif
+#endif // __IF_EXPR_AST_H__
