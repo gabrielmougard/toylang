@@ -12,31 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef __TOKEN_H__
-#define __TOKEN_H__
+#include "ast/ExprAST.h"
 
-// The lexer returns tokens [0-255] if it's an unknown character
-// otherwise it returns one of these for known things
-enum Token {
-  // End Of File
-  tok_eof = -1,
+// ForExprAST - Expression class for for/in.
+class ForExprAST : public ExprAST {
+  std::string VarName;
+  std::unique_ptr<ExprAST> Start, End, Step, Body;
 
-  // Commands
-  tok_def = -2,
-  tok_extern = -3,
+public:
+  ForExprAST(const std::string &VarName, std::unique_ptr<ExprAST> Start,
+             std::unique_ptr<ExprAST> End, std::unique_ptr<ExprAST> Step,
+             std::unique_ptr<ExprAST> Body)
+    : VarName(VarName), Start(std::move(Start)), End(std::move(End)),
+      Step(std::move(Step)), Body(std::move(Body)) {}
 
-  // Primary
-  tok_identifier = -4,
-  tok_number = -5,
-
-  // control flow
-  tok_if = -6,
-  tok_then = -7,
-  tok_else = -8,
-
-  // for loop
-  tok_for = -9,
-  tok_in = -10,
+  llvm::Value *codegen() override;
 };
-
-#endif

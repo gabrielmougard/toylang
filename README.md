@@ -16,6 +16,8 @@
 
 # Toylang
 
+![](./toylang.png)
+
 A toy language based on LLVM.
 
 ## Examples
