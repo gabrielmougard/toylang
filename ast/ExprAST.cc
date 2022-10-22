@@ -12,19 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef __EXPR_AST_H__
-#define __EXPR_AST_H__
+#include "ast/FunctionProtos.h"
 
-#include "global/global.h"
+llvm::Function *getFunction(std::string Name) {
+  // First, see if the function has already been added to the current module.
+  if (auto *F = TheModule->getFunction(Name))
+    return F;
 
-#include "llvm/IR/BasicBlock.h"
+  // If not, check whether we can codegen the declaration from some existing
+  // prototype.
+  auto FI = FunctionProtos.find(Name);
+  if (FI != FunctionProtos.end())
+    return FI->second->codegen();
 
-class ExprAST {
-public:
-  virtual ~ExprAST() {}
-  virtual llvm::Value *codegen() = 0;
-};
-
-llvm::Function *getFunction(std::string Name);
-
-#endif
+  // If no existing prototype exists, return null.
+  return nullptr;
+}

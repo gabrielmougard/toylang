@@ -15,10 +15,15 @@
 
 
 #include "ast/FunctionAST.h"
+#include "ast/FunctionProtos.h"
 
 // Generates LLVM code for functions declarations
 llvm::Function *FunctionAST::codegen() {
-  llvm::Function *TheFunction = TheModule->getFunction(Proto->getName());
+  // Transfer ownership of the prototype to the FunctionProtos map, but keep a
+  // reference to it for use below.
+  auto &P = *Proto;
+  FunctionProtos[Proto->getName()] = std::move(Proto);
+  llvm::Function *TheFunction = getFunction(P.getName());
 
   if (!TheFunction) {
     TheFunction = Proto->codegen();

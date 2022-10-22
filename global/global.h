@@ -16,6 +16,8 @@
 #ifndef __GLOBAL_H__
 #define __GLOBAL_H__
 
+#include "global/customJIT.h"
+
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/IR/BasicBlock.h"
@@ -27,6 +29,7 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Verifier.h"
+#include "llvm/IR/LegacyPassManager.h"
 
 // This is an object that owns LLVM core data structures
 extern llvm::LLVMContext TheContext;
@@ -39,5 +42,10 @@ extern std::unique_ptr<llvm::Module> TheModule;
 
 // This map keeps track of which values are defined in the current scope
 extern std::map<std::string, llvm::Value *> NamedValues;
+
+// This is an object that owns an LLVM Function Pass Manager
+extern std::unique_ptr<llvm::legacy::FunctionPassManager> TheFPM;
+
+extern std::unique_ptr<llvm::orc::CustomJIT> TheJIT;
 
 #endif

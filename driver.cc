@@ -20,6 +20,7 @@
 #include "ast/BinaryExprAST.h"
 #include "ast/CallExprAST.h"
 #include "ast/ExprAST.h"
+#include "ast/FunctionProtos.h"
 #include "ast/FunctionAST.h"
 #include "ast/NumberExprAST.h"
 #include "ast/PrototypeAST.h"
@@ -33,6 +34,7 @@
 
 // global headers
 #include "global/global.h"
+#include "global/customJIT.h"
 
 // LLVM headers
 #include "llvm/ADT/APFloat.h"
@@ -43,9 +45,15 @@
 #include "llvm/IR/Function.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Verifier.h"
+#include "llvm/Support/TargetSelect.h"
+#include "llvm/Target/TargetMachine.h"
+#include "llvm/Transforms/InstCombine/InstCombine.h"
+#include "llvm/Transforms/Scalar.h"
+#include "llvm/Transforms/Scalar/GVN.h"
 
 // stdlib headers
 #include <algorithm>
@@ -58,6 +66,28 @@
 #include <vector>
 
 using namespace llvm;
+using namespace llvm::orc;
+
+void InitializeModuleAndPassManager(void) {
+    // Open a new module
+    TheModule = std::make_unique<Module>("My awesome JIT", TheContext);
+    TheModule->setDataLayout(TheJIT->getTargetMachine().createDataLayout());
+
+    // Create a new pass manager attached to it.
+    TheFPM = std::make_unique<legacy::FunctionPassManager>(TheModule.get());
+
+    // Do simple "peephole" optimizations and bit-twiddling optimizations
+    TheFPM->add(createInstructionCombiningPass());
+    // Reassociate expressions
+    TheFPM->add(createReassociatePass());
+    // Eliminate Common SubExpressions
+    TheFPM->add(createGVNPass());
+    // Simplify the control flow graph (deleting unreachable blocks, etc)
+    TheFPM->add(createCFGSimplificationPass());
+
+    TheFPM->doInitialization();
+}
+
 
 static void HandleDefinition() {
     if (auto FnAST = ParseDefinition()) {
@@ -65,6 +95,8 @@ static void HandleDefinition() {
             fprintf(stderr, "Read function definition: \n");
             FnIR->print(errs());
             fprintf(stderr, "\n");
+            TheJIT->addModule(std::move(TheModule));
+            InitializeModuleAndPassManager();
         }
     } else {
         getNextToken();
@@ -77,6 +109,7 @@ static void HandleExtern() {
             fprintf(stderr, "Read extern: \n");
             FnIR->print(errs());
             fprintf(stderr, "\n");
+            FunctionProtos[ProtoAST->getName()] = std::move(ProtoAST);
         }
     } else {
         getNextToken();
@@ -90,8 +123,22 @@ static void HandleTopLevelExpression() {
             FnIR->print(errs());
             fprintf(stderr, "\n");
 
-            // Remove the anonymous expression.
-            FnIR->eraseFromParent();
+            // JIT the module containing the anonymous expression, keeping a handle so
+            // we can free it later.
+            auto H = TheJIT->addModule(std::move(TheModule));
+            InitializeModuleAndPassManager();
+
+            // Search the JIT for the __anon_expr symbol.
+            auto ExprSymbol = TheJIT->findSymbol("__anon_expr");
+            assert(ExprSymbol && "Function not found");
+
+            // Get the symbol's address and cast it to the right type (takes no
+            // arguments, returns a double) so we can call it as a native function.
+            double (*FP)() = (double (*)())(intptr_t)cantFail(ExprSymbol.getAddress());
+            fprintf(stderr, "Evaluated to %f\n", FP());
+
+            // Delete the anonymous expression module from the JIT.
+            TheJIT->removeModule(H);
         }
     } else {
         getNextToken();
@@ -101,7 +148,6 @@ static void HandleTopLevelExpression() {
 static void MainLoop() {
     while (true) {
         fprintf(stderr, "ready> ");
-
         switch (CurTok) {
         case tok_eof:
             return;
@@ -121,7 +167,33 @@ static void MainLoop() {
     }
 }
 
+//===----------------------------------------------------------------------===//
+// "Library" functions that can be "extern'd" from user code.
+//===----------------------------------------------------------------------===//
+
+#ifdef _WIN32
+#define DLLEXPORT __declspec(dllexport)
+#else
+#define DLLEXPORT
+#endif
+
+/// putchard - putchar that takes a double and returns 0.
+extern "C" DLLEXPORT double putchard(double X) {
+  fputc((char)X, stderr);
+  return 0;
+}
+
+/// printd - printf that takes a double prints it as "%f\n", returning 0.
+extern "C" DLLEXPORT double printd(double X) {
+  fprintf(stderr, "%f\n", X);
+  return 0;
+}
+
 int main() {
+    InitializeNativeTarget();
+    InitializeNativeTargetAsmPrinter();
+    InitializeNativeTargetAsmParser();
+
     BinopPrecedence['<'] = 10;
     BinopPrecedence['+'] = 20;
     BinopPrecedence['-'] = 20;
@@ -130,7 +202,10 @@ int main() {
     fprintf(stderr, "ready> ");
     getNextToken();
 
-    TheModule = std::make_unique<Module>("My awesome JIT", TheContext);
+    // Initialize the JIT compiler
+    TheJIT = std::make_unique<llvm::orc::CustomJIT>();
+
+    InitializeModuleAndPassManager();
 
     MainLoop();
 

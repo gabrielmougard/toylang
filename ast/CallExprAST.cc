@@ -16,7 +16,7 @@
 
 // Generate LLVM code for function calls
 llvm::Value *CallExprAST::codegen() {
-  llvm::Function *CalleeF = TheModule->getFunction(Callee);
+  llvm::Function *CalleeF = getFunction(Callee);
 
   if (!CalleeF) {
     return LogErrorV("Unknown function referenced");

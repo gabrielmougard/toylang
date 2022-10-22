@@ -25,3 +25,9 @@ std::unique_ptr<llvm::Module> TheModule;
 
 // This map keeps track of which values are defined in the current scope
 std::map<std::string, llvm::Value *> NamedValues;
+
+// This is an object that owns an LLVM Function Pass Manager
+std::unique_ptr<llvm::legacy::FunctionPassManager> TheFPM;
+
+// Our JIT compiler
+std::unique_ptr<llvm::orc::CustomJIT> TheJIT;

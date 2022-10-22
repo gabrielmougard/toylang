@@ -12,19 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef __EXPR_AST_H__
-#define __EXPR_AST_H__
+#include "ast/FunctionProtos.h"
 
-#include "global/global.h"
-
-#include "llvm/IR/BasicBlock.h"
-
-class ExprAST {
-public:
-  virtual ~ExprAST() {}
-  virtual llvm::Value *codegen() = 0;
-};
-
-llvm::Function *getFunction(std::string Name);
-
-#endif
+std::map<std::string, std::unique_ptr<PrototypeAST>> FunctionProtos;
